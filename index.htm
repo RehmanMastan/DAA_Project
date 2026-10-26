@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>GraphLab — Interactive Graph Algorithm Explorer</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <!-- Top Navigation Bar -->
+  <header id="top-nav">
+    <div class="logo">
+      <span class="logo-mark">GL</span>
+      <span class="project-name">GraphLab</span>
+    </div>
+    <nav class="nav-links" aria-label="Section navigation">
+      <button id="nav-workspace" class="nav-btn active">Workspace</button>
+      <button id="nav-algorithms" class="nav-btn">Algorithms</button>
+      <button id="nav-insights" class="nav-btn">Insights</button>
+    </nav>
+    <div id="status-indicator" class="status ready" aria-live="polite">Status: Ready</div>
+    <button id="reset-workspace" aria-label="Reset workspace" class="btn subtle-btn">⟳ Reset</button>
+  </header>
+
+  <!-- Compact Command Toolbar -->
+  <section id="command-toolbar" role="region" aria-label="Commands toolbar">
+    <button id="btn-new-node" class="btn">New Node</button>
+    <button id="btn-connect-mode" class="btn toggle-btn">Connect Mode</button>
+    <button id="btn-delete-mode" class="btn toggle-btn">Delete Mode</button>
+    <button id="btn-load-example" class="btn">Load Example</button>
+    <button id="btn-clear-graph" class="btn subtle-btn">Clear Workspace</button>
+    <label for="select-layout" class="toolbar-label">Layout:</label>
+    <select id="select-layout" aria-label="Select graph layout">
+      <option value="circular">Circular</option>
+      <option value="layered">Layered</option>
+    </select>
+    <button id="btn-undo" class="btn subtle-btn" disabled>Undo</button>
+  </section>
+
+  <!-- Main Workspace Area -->
+  <main id="main-workspace">
+    <!-- Central Graph Canvas -->
+    <section id="graph-canvas-container" role="region" aria-label="Graph visualization area">
+      <svg id="graph-svg" width="100%" height="100%" tabindex="0" aria-describedby="empty-graph-msg"></svg>
+      <div id="empty-graph-msg" class="empty-message">No nodes yet. Click "New Node" and then on the canvas to add nodes.</div>
+    </section>
+
+    <!-- Right Inspector Panel -->
+    <aside id="inspector-panel" role="region" aria-label="Graph and algorithm details">
+      <h2>Inspector</h2>
+      <section id="selected-node-info">
+        <h3>Selected Node</h3>
+        <div id="node-label-display" class="node-label">None</div>
+        <label for="node-rename-input" class="inspector-label">Rename Node:</label>
+        <input type="text" id="node-rename-input" aria-describedby="rename-help" />
+        <small id="rename-help" class="help-text">Press Enter to rename</small>
+        <div id="node-degree" class="node-detail"></div>
+        <div id="node-neighbors" class="node-detail"></div>
+      </section>
+      <section id="graph-stats">
+        <h3>Graph Statistics</h3>
+        <div>Total Nodes: <span id="stat-nodes">0</span></div>
+        <div>Total Edges: <span id="stat-edges">0</span></div>
+      </section>
+      <section id="algorithm-state">
+        <h3>Algorithm State</h3>
+        <div>Selected Algorithm: <span id="stat-algorithm">None</span></div>
+        <div>Current Node: <span id="stat-current-node">-</span></div>
+        <div>Current Operation: <span id="stat-operation">-</span></div>
+        <div>Discovered Nodes: <span id="stat-discovered">0</span></div>
+        <div>Completed Nodes: <span id="stat-completed">0</span></div>
+        <div>Traversal Order: <span id="stat-traversal-order">-</span></div>
+        <div>Queue / Stack: <span id="stat-queue-stack">-</span></div>
+        <div>Steps Completed: <span id="stat-steps-completed">0</span></div>
+      </section>
+    </aside>
+
+    <!-- Algorithm Configuration Area -->
+    <section id="algorithm-config" role="region" aria-label="Algorithm configuration">
+      <h2>Algorithm Configuration</h2>
+      <label for="algorithm-select" class="alg-label">Algorithm:</label>
+      <select id="algorithm-select" aria-describedby="alg-desc">
+        <option value="bfs">Breadth-First Search (BFS)</option>
+        <option value="dfs">Depth-First Search (DFS)</option>
+      </select>
+      <label for="start-node-select" class="alg-label">Start Node:</label>
+      <select id="start-node-select" aria-describedby="start-desc"></select>
+      <button id="btn-run-algorithm" class="btn accent-btn">Run Traversal</button>
+      <button id="btn-compare-algorithms" class="btn secondary-btn">Compare BFS & DFS</button>
+    </section>
+  </main>
+
+  <!-- Bottom Playback Timeline -->
+  <footer id="playback-bar" role="region" aria-label="Traversal playback controls">
+    <button id="play-prev" class="btn subtle-btn" aria-label="Previous Step">⯇</button>
+    <button id="play-play" class="btn accent-btn" aria-label="Play">▶️</button>
+    <button id="play-pause" class="btn accent-btn" aria-label="Pause" disabled>⏸</button>
+    <button id="play-next" class="btn subtle-btn" aria-label="Next Step">⯈</button>
+    <button id="play-restart" class="btn subtle-btn" aria-label="Restart Animation">⟲</button>
+    <label for="playback-speed" class="playback-label">Speed:</label>
+    <input type="range" id="playback-speed" min="100" max="2000" step="100" value="800" aria-valuemin="100" aria-valuemax="2000" aria-valuenow="800" />
+    <div id="step-indicator" aria-live="polite" class="step-indicator">Step 0 / 0</div>
+    <progress id="playback-progress" value="0" max="0"></progress>
+  </footer>
+
+  <!-- Supporting Information Section -->
+  <section id="info-section" role="region" aria-label="Graph algorithms information and insights">
+    <h2>Graph Algorithm Insights</h2>
+    <article id="info-bfs" class="info-article">
+      <h3>Breadth-First Search (BFS)</h3>
+      <p>BFS explores nodes level by level from the starting node, using a queue to keep track of nodes to visit next.</p>
+    </article>
+    <article id="info-dfs" class="info-article">
+      <h3>Depth-First Search (DFS)</h3>
+      <p>DFS explores deeply along one path before backtracking, using a stack or recursion to manage the exploration order.</p>
+    </article>
+    <article id="info-queue-stack" class="info-article">
+      <h3>Queue vs Stack</h3>
+      <p>BFS uses a queue (FIFO) to ensure level-wise exploration. DFS uses a stack (LIFO) to explore as deeply as possible.</p>
+    </article>
+    <article id="info-complexity" class="info-article">
+      <h3>Time and Space Complexity</h3>
+      <p>Both BFS and DFS run in O(V + E) time and use O(V) space on adjacency-list graphs, where V is nodes and E is edges.</p>
+    </article>
+    <article id="info-comparison-table" class="info-article">
+      <h3>Algorithm Comparison</h3>
+      <table>
+        <thead>
+          <tr><th>Aspect</th><th>BFS</th><th>DFS</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Data Structure</td><td>Queue</td><td>Stack</td></tr>
+          <tr><td>Traversal Order</td><td>Level-by-level</td><td>Depth-wise</td></tr>
+          <tr><td>Use Cases</td><td>Shortest path, level order</td><td>Connectivity, backtracking</td></tr>
+          <tr><td>Time Complexity</td><td>O(V + E)</td><td>O(V + E)</td></tr>
+          <tr><td>Space Complexity</td><td>O(V)</td><td>O(V)</td></tr>
+        </tbody>
+      </table>
+    </article>
+    <article id="info-applications" class="info-article">
+      <h3>Real-World Applications</h3>
+      <p>Graph traversals underpin network routing, puzzle solving, social network analysis, and more. Understanding both BFS and DFS is essential for various algorithms.</p>
+    </article>
+  </section>
+
+  <script src="script.js" defer></script>
+</body>
+</html>
